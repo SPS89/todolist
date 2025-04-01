@@ -24,12 +24,10 @@
 #    See the documentation for each action used below for the recommended IAM policies for this IAM user,
 #    and best practices on handling the access key credentials.
 
-name: Deploy to EC2
-
 on:
   push:
     branches:
-      - main
+      - main  # Replace with your branch name if different
 
 jobs:
   deploy:
@@ -41,24 +39,41 @@ jobs:
 
       - name: Set up SSH Key
         run: |
+          # Decode the private key from GitHub secrets
           echo "$PRIVATE_KEY" | base64 --decode > private_key.pem
+          
+          # Set the appropriate permissions
           chmod 600 private_key.pem
+          
+          # Start the SSH agent
+          eval $(ssh-agent -s)
+          
+          # Add the private key to the agent
+          ssh-add private_key.pem
+          
+          # Clean up the private key
+          rm private_key.pem
 
       - name: Deploy to EC2
         run: |
-          ssh -o StrictHostKeyChecking=no -i private_key.pem ubuntu@$HOST << EOF
+          # Remove old content from the web root directory
+          ssh -o StrictHostKeyChecking=no -i private_key.pem $USER@$HOST << EOF
             sudo rm -rf /var/www/html/*
             exit
           EOF
-          
-          scp -o StrictHostKeyChecking=no -i private_key.pem -r * ubuntu@$HOST:/var/www/html/
-          
-          ssh -o StrictHostKeyChecking=no -i private_key.pem ubuntu@$HOST << EOF
+
+          # Copy new content to EC2
+          scp -o StrictHostKeyChecking=no -i private_key.pem -r * $USER@$HOST:/var/www/html/
+
+          # Restart Nginx to apply the changes
+          ssh -o StrictHostKeyChecking=no -i private_key.pem $USER@$HOST << EOF
             sudo systemctl restart nginx
             exit
           EOF
 
     env:
-      PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}
-      HOST: 65.1.139.174
-      USER: ubuntu
+      PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}  # GitHub secret with your private key (base64-encoded)
+      HOST: 65.1.139.174  # EC2 public IP address
+      USER: sp  # Use 'sp' as the user for SSH access
+
+      
