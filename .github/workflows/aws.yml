@@ -24,6 +24,7 @@
 #    See the documentation for each action used below for the recommended IAM policies for this IAM user,
 #    and best practices on handling the access key credentials.
 
+
 name: Deploy to EC2
 
 on:
@@ -43,6 +44,13 @@ jobs:
         run: |
           echo "$PRIVATE_KEY" | base64 --decode > private_key.pem
           chmod 600 private_key.pem
+
+          - name: Debug Private Key
+  run: |
+    echo "$PRIVATE_KEY" | base64 --decode > private_key.pem
+    cat private_key.pem
+    chmod 600 private_key.pem
+
 
       - name: Deploy to EC2
         run: |
