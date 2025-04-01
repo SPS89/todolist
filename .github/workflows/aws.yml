@@ -24,14 +24,12 @@
 #    See the documentation for each action used below for the recommended IAM policies for this IAM user,
 #    and best practices on handling the access key credentials.
 
-
-
 name: Deploy to EC2
 
 on:
   push:
     branches:
-      - main  # Change to your main branch name if different
+      - main  # Replace with your branch name if different
 
 jobs:
   deploy:
@@ -43,11 +41,19 @@ jobs:
 
       - name: Set up SSH Key
         run: |
+          # Decode the private key from GitHub secrets
           echo "$PRIVATE_KEY" | base64 --decode > private_key.pem
+          
+          # Set the appropriate permissions
           chmod 600 private_key.pem
-          # Add the private key to the ssh-agent
+          
+          # Start the SSH agent
           eval $(ssh-agent -s)
+          
+          # Add the private key to the agent
           ssh-add private_key.pem
+          
+          # Clean up the private key
           rm private_key.pem
 
       - name: Deploy to EC2
@@ -68,6 +74,6 @@ jobs:
           EOF
 
     env:
-      PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}  # Set this secret in your GitHub repo secrets
-      HOST: 65.1.139.174  # Replace with your actual EC2 public IP
-      USER: ubuntu  # This is typically the default user for EC2 Ubuntu instances
+      PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}  # GitHub secret with your private key (base64-encoded)
+      HOST: 65.1.139.174  # EC2 public IP address
+      USER: ubuntu  # EC2 default user for Ubuntu instances
