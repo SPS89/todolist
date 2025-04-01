@@ -24,6 +24,8 @@
 #    See the documentation for each action used below for the recommended IAM policies for this IAM user,
 #    and best practices on handling the access key credentials.
 
+name: Deploy to EC2
+
 on:
   push:
     branches:
@@ -40,7 +42,7 @@ jobs:
       - name: Set up SSH Key
         run: |
           # Decode the private key from GitHub secrets
-          echo "$PRIVATE_KEY" | base64 --decode > private_key.pem
+          echo "${{ secrets.EC2_SSH_KEY }}" | base64 --decode > private_key.pem
           
           # Set the appropriate permissions
           chmod 600 private_key.pem
@@ -50,9 +52,6 @@ jobs:
           
           # Add the private key to the agent
           ssh-add private_key.pem
-          
-          # Clean up the private key
-          rm private_key.pem
 
       - name: Deploy to EC2
         run: |
@@ -75,5 +74,3 @@ jobs:
       PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}  # GitHub secret with your private key (base64-encoded)
       HOST: 65.1.139.174  # EC2 public IP address
       USER: sp  # Use 'sp' as the user for SSH access
-
-      
