@@ -25,7 +25,15 @@
 #    and best practices on handling the access key credentials.
 
 
-name: Deploy to EC2
+cking=no -i private_key.pem -r * $USER@$HOST:/var/www/html/
+          
+          # Restarting Nginx to apply the changes
+          ssh -o StrictHostKeyChecking=no -i private_key.pem $USER@$HOST << EOF
+            sudo systemctl restart nginx
+            exit
+          EOF
+
+    name: Deploy to EC2
 
 on:
   push:
@@ -44,27 +52,24 @@ jobs:
         run: |
           echo "$PRIVATE_KEY" | base64 --decode > private_key.pem
           chmod 600 private_key.pem
-
-          - name: Debug Private Key
-  run: |
-    echo "$PRIVATE_KEY" | base64 --decode > private_key.pem
-    cat private_key.pem
-    chmod 600 private_key.pem
-
+          # Add the private key to the ssh-agent
+          eval $(ssh-agent -s)
+          ssh-add private_key.pem
+          rm private_key.pem
 
       - name: Deploy to EC2
         run: |
-          # Removing old content from the web root directory
-          ssh -o StrictHostKeyChecking=no -i private_key.pem $USER@$HOST << EOF
+          # Remove old content from the web root directory
+          ssh -o StrictHostKeyChecking=no $USER@$HOST << EOF
             sudo rm -rf /var/www/html/*
             exit
           EOF
 
-          # Copying new content to EC2
-          scp -o StrictHostKeyChecking=no -i private_key.pem -r * $USER@$HOST:/var/www/html/
-          
-          # Restarting Nginx to apply the changes
-          ssh -o StrictHostKeyChecking=no -i private_key.pem $USER@$HOST << EOF
+          # Copy new content to EC2
+          scp -o StrictHostKeyChecking=no -r * $USER@$HOST:/var/www/html/
+
+          # Restart Nginx to apply the changes
+          ssh -o StrictHostKeyChecking=no $USER@$HOST << EOF
             sudo systemctl restart nginx
             exit
           EOF
