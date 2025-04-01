@@ -42,23 +42,26 @@ jobs:
       - name: Set up SSH Key
         run: |
           echo "$PRIVATE_KEY" | base64 --decode > private_key.pem
-          chmod 600 private_key.pem
+          chmod 400 private_key.pem
 
       - name: Deploy to EC2
         run: |
+          # Removing old content from the web root directory
           ssh -o StrictHostKeyChecking=no -i private_key.pem $USER@$HOST << EOF
             sudo rm -rf /var/www/html/*
             exit
           EOF
-          
+
+          # Copying new content to EC2
           scp -o StrictHostKeyChecking=no -i private_key.pem -r * $USER@$HOST:/var/www/html/
           
+          # Restarting Nginx to apply the changes
           ssh -o StrictHostKeyChecking=no -i private_key.pem $USER@$HOST << EOF
             sudo systemctl restart nginx
             exit
           EOF
 
     env:
-      PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}
-      HOST: your-ec2-public-ip
-      USER: ubuntu
+      PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}  # Set this secret in your GitHub repo secrets
+      HOST: 65.1.139.174  # Replace with your actual EC2 public IP
+      USER: ubuntu  # This is typically the default user for EC2 Ubuntu instances
