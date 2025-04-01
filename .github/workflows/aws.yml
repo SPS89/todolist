@@ -42,7 +42,7 @@ jobs:
       - name: Set up SSH Key
         run: |
           echo "$PRIVATE_KEY" | base64 --decode > private_key.pem
-          chmod 400 private_key.pem
+          chmod 600 private_key.pem
 
       - name: Deploy to EC2
         run: |
