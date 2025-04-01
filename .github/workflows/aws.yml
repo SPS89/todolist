@@ -73,4 +73,4 @@ jobs:
     env:
       PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}  # GitHub secret with your private key (base64-encoded)
       HOST: 65.1.139.174  # EC2 public IP address
-      USER: sp  # Use 'sp' as the user for SSH access
+      USER: ubuntu
